@@ -944,13 +944,6 @@ def run_cli_demo():
         print("=" * 60)
 
 
-if __name__ == "__main__":
-    import sys
-    if "--demo" in sys.argv:
-        run_cli_demo()
-    else:
-        print("[KrishiAlert v2] Starting at http://localhost:5000")
-        app.run(debug=True, port=5000)
 
 
 
