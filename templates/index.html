@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KrishiAlert — Agricultural Price Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --green:   #1a6b3a;
+    --green2:  #2d9e5e;
+    --gold:    #e8a020;
+    --amber:   #f4c842;
+    --soil:    #5c3a1e;
+    --cream:   #fdf6e3;
+    --offwhite:#f5f0e8;
+    --red:     #c0392b;
+    --ink:     #1a1a1a;
+    --muted:   #7a7060;
+    --border:  #d4c9a8;
+    --card:    #fffef9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--green);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--amber);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .logo-text span { color: var(--amber); }
+
+  .header-tag {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ─── LAYOUT ─── */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, var(--green) 0%, #0f4a28 100%);
+    color: #fff;
+    padding: 3rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '🌾';
+    position: absolute;
+    right: 2rem; top: 50%;
+    transform: translateY(-50%);
+    font-size: 8rem;
+    opacity: 0.12;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+  }
+
+  .hero h1 .highlight { color: var(--amber); }
+
+  .hero p {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.9rem;
+    max-width: 560px;
+    line-height: 1.7;
+  }
+
+  /* ─── FORM CARD ─── */
+  .form-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+
+  .form-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    background: var(--offwhite);
+    color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--green2);
+    box-shadow: 0 0 0 3px rgba(45,158,94,0.15);
+    background: #fff;
+  }
+
+  .btn-analyze {
+    margin-top: 1.5rem;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 0.85rem 2.5rem;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-analyze:hover { background: #145530; transform: translateY(-1px); }
+  .btn-analyze:active { transform: translateY(0); }
+  .btn-analyze:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* ─── SPINNER ─── */
+  .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── RESULTS ─── */
+  #results { display: none; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease forwards;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+  .stat-card.green { border-top: 4px solid var(--green2); }
+  .stat-card.gold  { border-top: 4px solid var(--gold); }
+  .stat-card.red   { border-top: 4px solid var(--red); }
+  .stat-card.soil  { border-top: 4px solid var(--soil); }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-green { background: #d4f5e2; color: var(--green); }
+  .badge-red   { background: #fde8e6; color: var(--red); }
+  .badge-amber { background: #fff3cc; color: #a06000; }
+
+  /* ─── SELL RECOMMENDATION ─── */
+  .sell-banner {
+    border-radius: 14px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    animation: fadeUp 0.4s 0.25s ease forwards;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  .sell-banner.sell-today { background: #d4f5e2; border: 2px solid var(--green2); }
+  .sell-banner.sell-wait  { background: #fff8e6; border: 2px solid var(--gold); }
+  .sell-banner.sell-alert { background: #fde8e6; border: 2px solid var(--red); }
+
+  .sell-icon { font-size: 2.5rem; flex-shrink: 0; }
+
+  .sell-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+  }
+
+  .sell-detail {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ─── CHART SECTION ─── */
+  .chart-section {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.4s 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--green);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+  }
+
+  /* ─── FORECAST TABLE ─── */
+  .forecast-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .forecast-table th {
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .forecast-table td {
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px solid #ede8da;
+    vertical-align: middle;
+  }
+
+  .forecast-table tr:last-child td { border-bottom: none; }
+
+  .forecast-table tr.best-row td {
+    background: #f0faf5;
+    font-weight: 600;
+  }
+
+  .price-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .price-bar {
+    height: 6px;
+    background: var(--green2);
+    border-radius: 3px;
+    min-width: 4px;
+    transition: width 0.6s ease;
+  }
+  .price-bar.high { background: var(--gold); }
+  .price-bar.low  { background: var(--red); }
+
+  /* ─── MANDI TABLE ─── */
+  .mandi-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mandi-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: var(--offwhite);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    gap: 1rem;
+  }
+
+  .mandi-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .mandi-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .mandi-gain {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  /* ─── SHAP BARS ─── */
+  .shap-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .shap-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .shap-label { flex: 0 0 160px; color: var(--muted); }
+
+  .shap-bar-wrap { flex: 1; height: 8px; background: #ede8da; border-radius: 4px; overflow: hidden; }
+  .shap-bar { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+  .shap-bar.pos { background: var(--green2); }
+  .shap-bar.neg { background: var(--red); }
+
+  .shap-val { flex: 0 0 60px; text-align: right; font-weight: 500; }
+
+  /* ─── SMS BOX ─── */
+  .sms-box {
+    background: #1a1a1a;
+    color: #a8e6c1;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    white-space: pre-wrap;
+    line-height: 1.7;
+    border: 1px solid #333;
+  }
+
+  /* ─── WEATHER ROW ─── */
+  .weather-row {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .weather-day {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--offwhite);
+    min-width: 90px;
+  }
+
+  .weather-day.today-w { border-color: var(--green2); background: #edfaf4; }
+
+  .wdate { font-size: 0.65rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .wicon { font-size: 1.6rem; margin-bottom: 0.3rem; }
+  .wtemp { font-size: 0.85rem; font-weight: 600; }
+  .wrain { font-size: 0.7rem; color: #4a90d9; margin-top: 0.2rem; }
+
+  /* ─── CARTEL ALERT ─── */
+  .cartel-alert {
+    background: #fde8e6;
+    border: 2px solid var(--red);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.4s 0.35s ease forwards;
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  .cartel-alert .alert-icon { font-size: 1.8rem; flex-shrink: 0; }
+
+  .cartel-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    color: var(--red);
+    margin-bottom: 0.3rem;
+  }
+
+  .cartel-body { font-size: 0.83rem; color: #7a2020; line-height: 1.6; }
+
+  /* ─── TABS ─── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    background: var(--offwhite);
+    border-radius: 10px;
+    padding: 0.3rem;
+    border: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 0.55rem;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--muted);
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--green);
+    color: #fff;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+  }
+
+  /* ─── LOADING OVERLAY ─── */
+  #loading {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(253,246,227,0.85);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  #loading.show { display: flex; }
+
+  .loading-spinner {
+    width: 48px; height: 48px;
+    border: 4px solid rgba(26,107,58,0.15);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .loading-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .loading-sub { font-size: 0.78rem; color: var(--muted); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.6rem; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Analysing market signals…</div>
+  <div class="loading-sub">Running XGBoost + GBR ensemble forecast</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌾</div>
+    <div>
+      <div class="logo-text">Krishi<span>Alert</span></div>
+      <div class="header-tag">Agricultural Price Intelligence</div>
+    </div>
+  </div>
+  <div style="font-size:0.7rem;color:rgba(255,255,255,0.5);display:flex;flex-direction:column;align-items:flex-end;gap:0.1rem">
+    <span>XGBoost + GBR Ensemble</span>
+    <span>IsolationForest · SHAP · Open-Meteo</span>
+  </div>
+</header>
+
+<!-- PRICE TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-label">🔴 LIVE</div>
+  <div class="ticker-track-wrap">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+</div>
+
+<style>
+.ticker-bar {
+  background: #0f3d22;
+  border-bottom: 1px solid #1a6b3a;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  overflow: hidden;
+  position: sticky;
+  top: 64px;
+  z-index: 99;
+}
+
+.ticker-label {
+  flex-shrink: 0;
+  padding: 0 0.9rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ff4444;
+  border-right: 1px solid #1a6b3a;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: #0a2a18;
+  animation: blink-live 1.2s step-start infinite;
+}
+@keyframes blink-live { 50% { opacity: 0.4; } }
+
+.ticker-track-wrap {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.ticker-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+  animation: ticker-scroll 38s linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover { animation-play-state: paused; }
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 1.4rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.88);
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+.ticker-item .t-crop  { color: var(--amber); font-weight: 600; }
+.ticker-item .t-dist  { color: rgba(255,255,255,0.55); }
+.ticker-item .t-price { color: #fff; font-weight: 700; }
+.ticker-item .t-up    { color: #4cdd8a; }
+.ticker-item .t-down  { color: #ff6b6b; }
+.ticker-item .t-flat  { color: rgba(255,255,255,0.5); }
+</style>
+
+<script>
+// ── Price Ticker Data ──
+const TICKER_DATA = [
+  { crop:'Tomato',  dist:'Raichur',  price:12.4, change: 1.8  },
+  { crop:'Onion',   dist:'Nashik',   price:18.2, change:-0.6  },
+  { crop:'Potato',  dist:'Agra',     price: 9.1, change: 0.0  },
+  { crop:'Wheat',   dist:'Ludhiana', price:27.5, change: 0.4  },
+  { crop:'Rice',    dist:'Warangal', price:31.8, change:-1.2  },
+  { crop:'Tomato',  dist:'Mysuru',   price:14.6, change: 2.1  },
+  { crop:'Onion',   dist:'Solapur',  price:16.9, change: 0.7  },
+  { crop:'Potato',  dist:'Indore',   price:11.3, change:-0.3  },
+  { crop:'Wheat',   dist:'Patna',    price:25.8, change: 0.0  },
+  { crop:'Rice',    dist:'Kurnool',  price:29.5, change: 1.0  },
+];
+
+const CROP_EMOJI = { Tomato:'🍅', Onion:'🧅', Potato:'🥔', Wheat:'🌾', Rice:'🍚' };
+
+function buildTicker() {
+  const items = TICKER_DATA.map(t => {
+    const arrow = t.change > 0 ? '▲' : t.change < 0 ? '▼' : '→';
+    const cls   = t.change > 0 ? 't-up' : t.change < 0 ? 't-down' : 't-flat';
+    const chStr = t.change === 0 ? '' : ` (${t.change > 0 ? '+' : ''}${t.change})`;
+    return `<span class="ticker-item">
+      <span>${CROP_EMOJI[t.crop]}</span>
+      <span class="t-crop">${t.crop}</span>
+      <span class="t-dist">${t.dist}</span>
+      <span class="t-price">₹${t.price}</span>
+      <span class="${cls}">${arrow}${chStr}</span>
+    </span>`;
+  }).join('');
+  // Duplicate for seamless loop
+  document.getElementById('tickerTrack').innerHTML = items + items;
+}
+
+buildTicker();
+
+// Slightly randomise prices every 8s for live feel
+setInterval(() => {
+  TICKER_DATA.forEach(t => {
+    const delta = (Math.random() - 0.48) * 0.6;
+    t.change = parseFloat(delta.toFixed(1));
+    t.price  = parseFloat((t.price + delta * 0.3).toFixed(1));
+  });
+  buildTicker();
+}, 8000);
+</script>
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>The Price Every<br><span class="highlight">Farmer Deserves</span> to Know</h1>
+    <p>ML-powered price forecasting for agricultural mandis. Identifies optimal selling windows, detects cartel behaviour, and delivers actionable advice for smallholder farmers.</p>
+  </div>
+
+  <!-- INPUT FORM -->
+  <div class="form-card">
+    <h2>📊 Market Analysis Input</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Crop</label>
+        <select id="cropSelect">
+          <option value="tomato">🍅 Tomato</option>
+          <option value="onion">🧅 Onion</option>
+          <option value="potato">🥔 Potato</option>
+          <option value="wheat">🌾 Wheat</option>
+          <option value="rice">🌾 Rice</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>District</label>
+        <select id="districtSelect">
+          <option value="raichur">Raichur (KA)</option>
+          <option value="mysuru">Mysuru (KA)</option>
+          <option value="nashik">Nashik (MH)</option>
+          <option value="agra">Agra (UP)</option>
+          <option value="warangal">Warangal (TS)</option>
+          <option value="kurnool">Kurnool (AP)</option>
+          <option value="solapur">Solapur (MH)</option>
+          <option value="indore">Indore (MP)</option>
+          <option value="ludhiana">Ludhiana (PB)</option>
+          <option value="patna">Patna (BR)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Today's Price (₹/kg)</label>
+        <input type="number" id="currentPrice" value="14.00" step="0.5" min="1" max="500"/>
+      </div>
+      <div class="form-group">
+        <label>Max Wait (days)</label>
+        <input type="number" id="maxWait" value="4" min="1" max="7"/>
+      </div>
+      <div class="form-group">
+        <label>Arrival Volume (qtl)</label>
+        <input type="number" id="arrivalVol" value="500" min="10" max="5000"/>
+      </div>
+      <div class="form-group">
+        <label>Voice Language</label>
+        <select id="voiceLang">
+          <option value="en">English</option>
+          <option value="hi">Hindi (हिंदी)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-analyze" onclick="runForecast()">
+      <span id="btnText">🔍 Analyse Market</span>
+      <div class="spinner" id="btnSpinner"></div>
+    </button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <!-- CARTEL ALERT (shown conditionally) -->
+    <div id="cartelAlert" class="cartel-alert" style="display:none">
+      <div class="alert-icon">⚠️</div>
+      <div>
+        <div class="cartel-title">Possible Buyer Cartel Detected</div>
+        <div class="cartel-body" id="cartelBody"></div>
+      </div>
+    </div>
+
+    <!-- SELL RECOMMENDATION BANNER -->
+    <div id="sellBanner" class="sell-banner">
+      <div class="sell-icon" id="sellIcon"></div>
+      <div>
+        <div class="sell-title" id="sellTitle"></div>
+        <div class="sell-detail" id="sellDetail"></div>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="results-grid">
+      <div class="stat-card green">
+        <div class="stat-label">Today's Price</div>
+        <div class="stat-value" id="statToday">—</div>
+        <div class="stat-sub">₹ per kilogram</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Best Expected Price</div>
+        <div class="stat-value" id="statBest">—</div>
+        <div class="stat-sub" id="statBestDay">—</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Gain on 100 kg</div>
+        <div class="stat-value" id="statGain">—</div>
+        <div class="stat-sub" id="statGainBadge">—</div>
+      </div>
+      <div class="stat-card soil">
+        <div class="stat-label">Fair Market Price</div>
+        <div class="stat-value" id="statFair">—</div>
+        <div class="stat-sub" id="statFairSub">—</div>
+      </div>
+    </div>
+
+    <!-- WEATHER ROW -->
+    <div class="chart-section">
+      <div class="section-title">🌤️ 7-Day Weather Forecast</div>
+      <div class="weather-row" id="weatherRow"></div>
+    </div>
+
+    <!-- TABS: Chart / Table / Mandis / AI Explanation / SMS -->
+    <div class="chart-section">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('chart')">📈 Price Chart</button>
+        <button class="tab-btn" onclick="switchTab('table')">📋 Forecast Table</button>
+        <button class="tab-btn" onclick="switchTab('mandis')">🗺️ Nearby Mandis</button>
+        <button class="tab-btn" onclick="switchTab('shap')">🧠 AI Explanation</button>
+        <button class="tab-btn" onclick="switchTab('sms')">📱 SMS Preview</button>
+      </div>
+
+      <!-- CHART TAB -->
+      <div class="tab-panel active" id="tab-chart">
+        <div class="section-title">📈 7-Day Price Forecast</div>
+        <canvas id="forecastChart" height="100"></canvas>
+      </div>
+
+      <!-- TABLE TAB -->
+      <div class="tab-panel" id="tab-table">
+        <div class="section-title">📋 Day-by-Day Forecast</div>
+        <table class="forecast-table">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Date</th>
+              <th>Price (₹/kg)</th>
+              <th>Confidence Range</th>
+              <th>Weather</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody id="forecastTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- MANDIS TAB -->
+      <div class="tab-panel" id="tab-mandis">
+        <div class="section-title">🗺️ Live Mandi Map — Nearby Better Markets</div>
+        <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:0.85rem;font-size:0.78rem;color:var(--muted)">
+          <span>🟢 <b>Your District</b></span>
+          <span>🟡 <b>Better Price Mandi</b></span>
+          <span>🔴 <b>Lower Price</b></span>
+        </div>
+        <div id="mandiMap" style="height:340px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:1.25rem;z-index:0;"></div>
+        <div class="mandi-list" id="mandiList"></div>
+      </div>
+
+      <!-- SHAP TAB -->
+      <div class="tab-panel" id="tab-shap">
+        <div class="section-title">🧠 Why This Forecast? (SHAP Explanation)</div>
+        <div class="shap-list" id="shapList"></div>
+      </div>
+
+      <!-- SMS TAB -->
+      <div class="tab-panel" id="tab-sms">
+        <div class="section-title">📱 SMS / Low-Bandwidth Alert</div>
+        <div class="sms-box" id="smsBox"></div>
+        <div style="margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+          <input type="tel" id="phoneInput" placeholder="+919XXXXXXXXX"
+            style="padding:0.55rem 0.9rem;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:0.85rem;background:var(--offwhite)"/>
+          <button onclick="sendSMS()" style="background:var(--green);color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:8px;font-family:monospace;cursor:pointer;font-size:0.85rem;">
+            📤 Send SMS
+          </button>
+          <span id="smsStatus" style="font-size:0.8rem;color:var(--muted)"></span>
+        </div>
+        <div style="margin-top:1rem">
+          <button onclick="playVoice()" style="background:var(--soil);color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:8px;font-family:monospace;cursor:pointer;font-size:0.85rem;">
+            🔊 Play Voice Recommendation
+          </button>
+          <audio id="voiceAudio" style="display:none" controls></audio>
+        </div>
+      </div>
+
+    </div><!-- end chart-section tabs -->
+
+    <!-- HISTORICAL PRICE CHART -->
+    <div class="chart-section" id="histSection">
+      <div class="section-title">📊 Historical Prices (Last 60 Days)</div>
+      <canvas id="historicalChart" height="80"></canvas>
+    </div>
+
+    <!-- DISTRICT COMPARISON -->
+    <div class="chart-section">
+      <div class="section-title">⚖️ Fair Price Comparison Across Districts</div>
+      <canvas id="compChart" height="80"></canvas>
+    </div>
+
+  </div><!-- end #results -->
+
+</div><!-- end .container -->
+
+<footer>
+  KrishiAlert v2 &nbsp;·&nbsp; XGBoost + GBR Ensemble &nbsp;·&nbsp; IsolationForest Cartel Detection &nbsp;·&nbsp; SHAP Explainability &nbsp;·&nbsp; Open-Meteo Weather<br>
+  Built for agricultural market transparency · Hackathon Demo
+</footer>
+
+<script>
+let lastResult = null;
+let forecastChartInst = null;
+let historicalChartInst = null;
+let compChartInst = null;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const names = ['chart','table','mandis','shap','sms'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-'+name);
+  });
+  // Invalidate map size when mandis tab opens
+  if (name === 'mandis' && window._mandiMap) {
+    setTimeout(() => window._mandiMap.invalidateSize(), 100);
+  }
+}
+
+// District coordinates (mirrors DISTRICT_META in Python)
+const DISTRICT_COORDS = {
+  raichur:  [16.20, 77.36], mysuru:   [12.29, 76.64],
+  nashik:   [19.99, 73.79], agra:     [27.18, 78.01],
+  warangal: [17.97, 79.59], kurnool:  [15.83, 78.04],
+  solapur:  [17.68, 75.90], indore:   [22.72, 75.86],
+  ludhiana: [30.90, 75.85], patna:    [25.59, 85.13],
+};
+
+function renderMandiMap(myDistrict, nearbyMandis) {
+  const mapEl = document.getElementById('mandiMap');
+
+  // Destroy existing map instance
+  if (window._mandiMap) {
+    window._mandiMap.remove();
+    window._mandiMap = null;
+  }
+
+  const myCoords = DISTRICT_COORDS[myDistrict] || [20.5, 78.9];
+
+  const map = L.map('mandiMap', { zoomControl: true }).setView(myCoords, 6);
+  window._mandiMap = map;
+
+  // OpenStreetMap tiles (free, no key)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 13,
+  }).addTo(map);
+
+  // Green pin — your district
+  const greenIcon = L.divIcon({
+    html: `<div style="background:#1a6b3a;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>`,
+    iconSize: [18, 18], iconAnchor: [9, 9], className: ''
+  });
+  L.marker(myCoords, { icon: greenIcon })
+    .addTo(map)
+    .bindPopup(`<b>📍 ${myDistrict.charAt(0).toUpperCase()+myDistrict.slice(1)}</b><br>Your selected district<br><span style="color:#1a6b3a;font-weight:600">Current location</span>`)
+    .openPopup();
+
+  // Yellow pins — better mandis
+  nearbyMandis.forEach(m => {
+    const dist = m.district.toLowerCase();
+    const coords = DISTRICT_COORDS[dist];
+    if (!coords) return;
+
+    const gain = m.potential_gain_per_kg;
+    const color = gain >= 5 ? '#e8a020' : gain >= 2.5 ? '#f4c842' : '#2d9e5e';
+
+    const yellowIcon = L.divIcon({
+      html: `<div style="background:${color};width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div>`,
+      iconSize: [16, 16], iconAnchor: [8, 8], className: ''
+    });
+
+    // Draw line from your district to this mandi
+    L.polyline([myCoords, coords], {
+      color: color, weight: 2, opacity: 0.6, dashArray: '6,6'
+    }).addTo(map);
+
+    L.marker(coords, { icon: yellowIcon })
+      .addTo(map)
+      .bindPopup(`
+        <b>🏪 ${m.district}, ${m.state}</b><br>
+        <span style="color:#1a6b3a;font-weight:700;font-size:1.05em">+₹${m.potential_gain_per_kg}/kg</span><br>
+        ${m.distance_km} km away · ${m.isolation} isolation<br>
+        <span style="color:#888;font-size:0.85em">${m.mandis.join(', ')}</span>
+      `);
+  });
+
+  // Fit map to show all markers
+  if (nearbyMandis.length > 0) {
+    const allCoords = [myCoords, ...nearbyMandis.map(m => DISTRICT_COORDS[m.district.toLowerCase()]).filter(Boolean)];
+    map.fitBounds(allCoords, { padding: [40, 40] });
+  }
+}
+
+async function runForecast() {
+  const crop     = document.getElementById('cropSelect').value;
+  const district = document.getElementById('districtSelect').value;
+  const price    = parseFloat(document.getElementById('currentPrice').value);
+  const wait     = parseInt(document.getElementById('maxWait').value);
+  const arrivals = parseFloat(document.getElementById('arrivalVol').value);
+  const lang     = document.getElementById('voiceLang').value;
+
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('btnSpinner').style.display = 'block';
+  document.getElementById('btnText').textContent = 'Analysing…';
+  document.querySelector('.btn-analyze').disabled = true;
+
+  try {
+    const resp = await fetch('/forecast', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        crop, district,
+        current_price: price,
+        max_wait_days: wait,
+        arrival_volume: arrivals,
+        voice_lang: lang,
+        voice: true,
+        explain: true
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      alert('Error: ' + (err.error || 'Unknown error'));
+      return;
+    }
+
+    lastResult = await resp.json();
+    renderResults(lastResult);
+    loadHistoricalChart(crop, district);
+    loadCompChart(crop);
+
+  } catch(e) {
+    alert('Connection error: ' + e.message);
+  } finally {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('btnSpinner').style.display = 'none';
+    document.getElementById('btnText').textContent = '🔍 Analyse Market';
+    document.querySelector('.btn-analyze').disabled = false;
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('results').style.display = 'block';
+  window.scrollTo({top: document.getElementById('results').offsetTop - 80, behavior:'smooth'});
+
+  const w = data.selling_window;
+  const a = data.anomaly;
+
+  // Cartel alert
+  const cartelDiv = document.getElementById('cartelAlert');
+  if (a.cartel_flag) {
+    cartelDiv.style.display = 'flex';
+    document.getElementById('cartelBody').textContent =
+      `Current price ₹${data.current_price}/kg is ${a.pct_below_fair}% below the fair market value of ₹${a.fair_price}/kg. ` +
+      `This pattern is consistent with coordinated buyer suppression. Consider waiting or travelling to a nearby mandi.`;
+  } else {
+    cartelDiv.style.display = 'none';
+  }
+
+  // Sell banner
+  const banner = document.getElementById('sellBanner');
+  banner.className = 'sell-banner ' + (w.sell_today ? 'sell-today' : (a.cartel_flag ? 'sell-alert' : 'sell-wait'));
+  document.getElementById('sellIcon').textContent = w.sell_today ? '✅' : (a.cartel_flag ? '⚠️' : '⏳');
+  document.getElementById('sellTitle').textContent = w.sell_today
+    ? 'SELL TODAY — Prices are at or near peak'
+    : `WAIT — Best window: ${w.best_day_label}, ${w.best_day_date}`;
+  document.getElementById('sellDetail').textContent =
+    `Expected price: ₹${w.expected_price}/kg · ` +
+    `Gain on 100kg: ₹${w.gain_on_100kg} · ` +
+    `Confidence: ${w.confidence.toUpperCase()} · ` +
+    `District: ${data.district_info.state} (${data.district_info.isolation} isolation)`;
+
+  // Stat cards
+  document.getElementById('statToday').textContent = `₹${data.current_price}`;
+  document.getElementById('statBest').textContent  = `₹${w.expected_price}`;
+  document.getElementById('statBestDay').textContent = w.sell_today ? 'Sell today!' : `on ${w.best_day_label}, ${w.best_day_date}`;
+  const gain = w.gain_on_100kg;
+  document.getElementById('statGain').textContent = (gain >= 0 ? '+' : '') + `₹${gain}`;
+  document.getElementById('statGainBadge').innerHTML = gain > 0
+    ? `<span class="badge badge-green">↑ Better price ahead</span>`
+    : `<span class="badge badge-amber">Sell now</span>`;
+  document.getElementById('statFair').textContent = `₹${a.fair_price}`;
+  document.getElementById('statFairSub').innerHTML = a.cartel_flag
+    ? `<span class="badge badge-red">⚠️ ${a.pct_below_fair}% below fair</span>`
+    : `<span class="badge badge-green">✓ Fair price</span>`;
+
+  // Weather row
+  const wr = document.getElementById('weatherRow');
+  wr.innerHTML = '';
+  const wdata = data.weather;
+  (wdata.dates || []).forEach((dt, i) => {
+    const rain = wdata.rainfall[i] || 0;
+    const icon = rain > 15 ? '🌧️' : rain > 5 ? '🌦️' : '☀️';
+    wr.innerHTML += `
+      <div class="weather-day ${i===0?'today-w':''}">
+        <div class="wdate">${i===0?'TODAY':dt.slice(5)}</div>
+        <div class="wicon">${icon}</div>
+        <div class="wtemp">${Math.round(wdata.temp_max[i])}°/${Math.round(wdata.temp_min[i])}°</div>
+        <div class="wrain">💧 ${rain.toFixed(1)}mm</div>
+      </div>`;
+  });
+
+  // Forecast chart
+  const labels = data.forecasts.map(f => `${f.day_label}\n${f.date}`);
+  const prices = data.forecasts.map(f => f.price);
+  const ciLow  = data.forecasts.map(f => f.ci_low);
+  const ciHigh = data.forecasts.map(f => f.ci_high);
+  const bestIdx = w.best_day_index;
+
+  if (forecastChartInst) forecastChartInst.destroy();
+  const ctx = document.getElementById('forecastChart').getContext('2d');
+  forecastChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Forecast Price (₹/kg)',
+          data: prices,
+          borderColor: '#1a6b3a',
+          backgroundColor: 'rgba(26,107,58,0.08)',
+          borderWidth: 2.5,
+          tension: 0.3,
+          fill: true,
+          pointBackgroundColor: prices.map((_, i) => i === bestIdx ? '#e8a020' : '#1a6b3a'),
+          pointRadius: prices.map((_, i) => i === bestIdx ? 8 : 4),
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+        },
+        {
+          label: 'CI High',
+          data: ciHigh,
+          borderColor: 'rgba(45,158,94,0.3)',
+          backgroundColor: 'transparent',
+          borderDash: [5,3],
+          borderWidth: 1,
+          pointRadius: 0,
+        },
+        {
+          label: 'CI Low',
+          data: ciLow,
+          borderColor: 'rgba(192,57,43,0.3)',
+          backgroundColor: 'transparent',
+          borderDash: [5,3],
+          borderWidth: 1,
+          pointRadius: 0,
+        },
+        {
+          label: 'Current Price',
+          data: Array(prices.length).fill(data.current_price),
+          borderColor: '#c0392b',
+          backgroundColor: 'transparent',
+          borderDash: [8,4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true, labels: { font: { family: 'IBM Plex Mono', size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `₹${ctx.parsed.y.toFixed(2)}/kg`
+          }
+        },
+        annotation: {}
+      },
+      scales: {
+        y: { ticks: { callback: v => '₹'+v, font:{family:'IBM Plex Mono',size:11} }, grid: { color: '#ede8da' } },
+        x: { ticks: { font:{family:'IBM Plex Mono',size:10} }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Forecast table
+  const tbody = document.getElementById('forecastTableBody');
+  tbody.innerHTML = '';
+  const maxP = Math.max(...prices);
+  data.forecasts.forEach((f, i) => {
+    const barPct = Math.round((f.price / maxP) * 100);
+    const rain = f.rainfall;
+    const wicon = rain > 15 ? '🌧️' : rain > 5 ? '🌦️' : '☀️';
+    const trend = i === 0 ? '' : f.price > prices[i-1] ? '↑' : '↓';
+    const trendColor = trend === '↑' ? 'color:var(--green)' : 'color:var(--red)';
+    tbody.innerHTML += `
+      <tr class="${i===bestIdx?'best-row':''}">
+        <td>${i===bestIdx?'⭐ ':''}<strong>${f.day_label}</strong></td>
+        <td>${f.date}</td>
+        <td>
+          <div class="price-bar-wrap">
+            <div class="price-bar ${f.price>data.current_price?'':'low'}" style="width:${barPct}%"></div>
+            ₹${f.price}
+          </div>
+        </td>
+        <td style="color:var(--muted);font-size:0.8rem">₹${f.ci_low} – ₹${f.ci_high}</td>
+        <td>${wicon} ${f.temp_max}°C / 💧${f.rainfall}mm</td>
+        <td style="${trendColor};font-weight:700">${trend}</td>
+      </tr>`;
+  });
+
+  // Nearby mandis
+  const ml = document.getElementById('mandiList');
+  ml.innerHTML = '';
+  if (data.nearby_mandis.length === 0) {
+    ml.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;padding:1rem">No significantly better markets within 320km.</div>';
+  } else {
+    data.nearby_mandis.forEach(m => {
+      ml.innerHTML += `
+        <div class="mandi-item">
+          <div>
+            <div class="mandi-name">📍 ${m.district}, ${m.state}</div>
+            <div class="mandi-sub">${m.mandis.join(' · ')} &nbsp;·&nbsp; ${m.distance_km} km away &nbsp;·&nbsp; ${m.isolation} isolation</div>
+          </div>
+          <div style="text-align:right">
+            <div class="mandi-gain">+₹${m.potential_gain_per_kg}/kg</div>
+            <div style="font-size:0.75rem;color:var(--muted)">+₹${m.gain_on_quintal} per quintal</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // ── Live Mandi Map (Leaflet) ──
+  renderMandiMap(data.district, data.nearby_mandis);
+
+  // SHAP
+  const sl = document.getElementById('shapList');
+  sl.innerHTML = '';
+  const maxAbs = Math.max(...data.explanation.map(e => Math.abs(e.impact)), 0.001);
+  data.explanation.forEach(e => {
+    const pct = Math.round(Math.abs(e.impact) / maxAbs * 100);
+    const pos = e.impact > 0;
+    sl.innerHTML += `
+      <div class="shap-row">
+        <div class="shap-label">${e.feature}</div>
+        <div class="shap-bar-wrap">
+          <div class="shap-bar ${pos?'pos':'neg'}" style="width:${pct}%"></div>
+        </div>
+        <div class="shap-val" style="color:${pos?'var(--green)':'var(--red)'}">
+          ${pos?'+':''}${e.impact.toFixed(3)}
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted);flex:0 0 120px">${e.direction}</div>
+      </div>`;
+  });
+
+  // SMS
+  document.getElementById('smsBox').textContent = data.sms_text;
+
+  // Voice
+  if (data.voice_mp3_b64) {
+    const audio = document.getElementById('voiceAudio');
+    audio.src = 'data:audio/mp3;base64,' + data.voice_mp3_b64;
+  }
+}
+
+async function loadHistoricalChart(crop, district) {
+  try {
+    const resp = await fetch(`/chart/historical?crop=${crop}&district=${district}`);
+    const data = await resp.json();
+    if (historicalChartInst) historicalChartInst.destroy();
+    const ctx = document.getElementById('historicalChart').getContext('2d');
+    historicalChartInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.labels.map(l => l.slice(5)),
+        datasets: [{
+          label: 'Historical Price (₹/kg)',
+          data: data.prices,
+          borderColor: '#5c3a1e',
+          backgroundColor: 'rgba(92,58,30,0.07)',
+          borderWidth: 1.5,
+          tension: 0.3,
+          fill: true,
+          pointRadius: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: v => '₹'+v, font:{family:'IBM Plex Mono',size:10} }, grid:{color:'#ede8da'} },
+          x: { ticks: { font:{family:'IBM Plex Mono',size:9}, maxTicksLimit: 10 }, grid:{display:false} }
+        }
+      }
+    });
+  } catch(e) { console.error('Historical chart error', e); }
+}
+
+async function loadCompChart(crop) {
+  try {
+    const resp = await fetch(`/chart/district_comparison?crop=${crop}`);
+    const data = await resp.json();
+    if (compChartInst) compChartInst.destroy();
+    const ctx = document.getElementById('compChart').getContext('2d');
+    const colors = data.map(d => d.isolation === 'High' ? '#c0392b' : d.isolation === 'Medium' ? '#e8a020' : '#1a6b3a');
+    compChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.district),
+        datasets: [{
+          label: 'Fair Price (₹/kg)',
+          data: data.map(d => d.fair_price),
+          backgroundColor: colors.map(c => c + '99'),
+          borderColor: colors,
+          borderWidth: 1.5,
+          borderRadius: 5,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: v => '₹'+v, font:{family:'IBM Plex Mono',size:10} }, grid:{color:'#ede8da'} },
+          x: { ticks: { font:{family:'IBM Plex Mono',size:10} }, grid:{display:false} }
+        }
+      }
+    });
+  } catch(e) { console.error('Comparison chart error', e); }
+}
+
+async function sendSMS() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone) { alert('Enter phone number'); return; }
+  const crop     = document.getElementById('cropSelect').value;
+  const district = document.getElementById('districtSelect').value;
+  const price    = parseFloat(document.getElementById('currentPrice').value);
+  const wait     = parseInt(document.getElementById('maxWait').value);
+
+  document.getElementById('smsStatus').textContent = 'Sending…';
+  const resp = await fetch('/forecast', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ crop, district, current_price: price, max_wait_days: wait, phone_number: phone })
+  });
+  const data = await resp.json();
+  document.getElementById('smsStatus').textContent =
+    data.sms_sent?.status === 'sent' ? '✅ Sent!' : ('⚠️ ' + (data.sms_sent?.detail || 'Twilio not configured'));
+}
+
+function playVoice() {
+  const audio = document.getElementById('voiceAudio');
+  audio.style.display = 'block';
+  audio.play();
+}
+</script>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- KRISHIALERT AI CHATBOT                 -->
+<!-- ═══════════════════════════════════════ -->
+<style>
+  /* Chatbot styles */
+  #chat-fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 62px;
+    height: 62px;
+    background: var(--green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(26,107,58,0.45);
+    z-index: 999;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 3px solid var(--amber);
+  }
+  #chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(26,107,58,0.55); }
+  #chat-fab .fab-icon { font-size: 1.6rem; transition: opacity 0.2s; }
+  #chat-fab .fab-close { display: none; font-size: 1.4rem; color: #fff; font-weight: 700; }
+  #chat-fab.open .fab-icon { display: none; }
+  #chat-fab.open .fab-close { display: block; }
+
+  #chat-window {
+    position: fixed;
+    bottom: 6rem;
+    right: 2rem;
+    width: 380px;
+    height: 520px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+    z-index: 998;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: chatSlideUp 0.25s ease;
+  }
+  #chat-window.open { display: flex; }
+
+  @keyframes chatSlideUp {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .chat-header {
+    background: var(--green);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+  .chat-header-icon {
+    width: 36px; height: 36px;
+    background: var(--amber);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .chat-header-text .chat-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+  }
+  .chat-header-text .chat-sub {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.5px;
+  }
+  .chat-online {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.7);
+  }
+  .chat-online-dot {
+    width: 7px; height: 7px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--offwhite);
+  }
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .chat-msg {
+    max-width: 85%;
+    padding: 0.6rem 0.9rem;
+    border-radius: 14px;
+    font-size: 0.83rem;
+    line-height: 1.55;
+    animation: msgFade 0.2s ease;
+  }
+  @keyframes msgFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .chat-msg.bot {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+  }
+  .chat-msg.user {
+    background: var(--green);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+  }
+  .chat-msg.typing {
+    background: var(--card);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    padding: 0.75rem 1rem;
+  }
+  .typing-dots {
+    display: flex; gap: 4px; align-items: center;
+  }
+  .typing-dots span {
+    width: 6px; height: 6px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: dotBounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotBounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+  }
+
+  /* Quick suggestion pills */
+  .chat-suggestions {
+    padding: 0.5rem 1rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    background: var(--offwhite);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .chat-pill {
+    padding: 0.25rem 0.65rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: var(--green);
+    font-family: 'IBM Plex Mono', monospace;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .chat-pill:hover { background: var(--green); color: #fff; border-color: var(--green); }
+
+  .chat-input-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #chatInput {
+    flex: 1;
+    padding: 0.55rem 0.8rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    background: var(--offwhite);
+    color: var(--ink);
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #chatInput:focus { border-color: var(--green2); background: #fff; }
+  #chatSendBtn {
+    width: 38px; height: 38px;
+    background: var(--green);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  #chatSendBtn:hover { background: #145530; }
+  #chatSendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @media (max-width: 480px) {
+    #chat-window { width: calc(100vw - 2rem); right: 1rem; }
+  }
+</style>
+
+<!-- FAB Button -->
+<div id="chat-fab" onclick="toggleChat()">
+  <div class="fab-icon">🤖</div>
+  <div class="fab-close">✕</div>
+</div>
+
+<!-- Chat Window -->
+<div id="chat-window">
+  <div class="chat-header">
+    <div class="chat-header-icon">🌾</div>
+    <div class="chat-header-text">
+      <div class="chat-title">Ask KrishiAlert AI</div>
+      <div class="chat-sub">Agriculture Expert · Select a question below</div>
+    </div>
+    <div class="chat-online">
+      <div class="chat-online-dot"></div>
+      Online
+    </div>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg bot">
+      👋 Namaste Kisan! I'm <b>KrishiAlert AI</b>.<br><br>
+      Choose a question below to get started:
+    </div>
+  </div>
+
+  <!-- Fixed 3-button menu — always visible, no free text -->
+  <div class="chat-btn-menu" id="chatBtnMenu">
+
+    <!-- Q1: Crop Prices & Peak Time — shows crop sub-buttons -->
+    <div class="chat-menu-btn" onclick="showCropPicker()">
+      📈 Crop Price &amp; Best Selling Time
+    </div>
+
+    <!-- Q2: Nearby Mandi — shows district sub-buttons -->
+    <div class="chat-menu-btn" onclick="showMandiPicker()">
+      🗺️ Nearby Mandi Recommendation
+    </div>
+
+    <!-- Q3: How our model works — direct answer -->
+    <div class="chat-menu-btn" onclick="answerModelInfo()">
+      🤖 How Does Our ML Model Work?
+    </div>
+
+  </div>
+
+  <!-- Sub-picker for crops (hidden by default) -->
+  <div class="chat-sub-menu" id="cropPicker" style="display:none">
+    <div class="chat-sub-label">Select crop:</div>
+    <div class="chat-sub-btns">
+      <div class="chat-pill" onclick="answerCropPrice('tomato')">🍅 Tomato</div>
+      <div class="chat-pill" onclick="answerCropPrice('onion')">🧅 Onion</div>
+      <div class="chat-pill" onclick="answerCropPrice('potato')">🥔 Potato</div>
+      <div class="chat-pill" onclick="answerCropPrice('wheat')">🌾 Wheat</div>
+      <div class="chat-pill" onclick="answerCropPrice('rice')">🍚 Rice</div>
+    </div>
+    <div class="chat-back" onclick="showMainMenu()">← Back</div>
+  </div>
+
+  <!-- Sub-picker for mandis (hidden by default) -->
+  <div class="chat-sub-menu" id="mandiPicker" style="display:none">
+    <div class="chat-sub-label">Select district:</div>
+    <div class="chat-sub-btns">
+      <div class="chat-pill" onclick="answerMandi('raichur')">Raichur</div>
+      <div class="chat-pill" onclick="answerMandi('mysuru')">Mysuru</div>
+      <div class="chat-pill" onclick="answerMandi('nashik')">Nashik</div>
+      <div class="chat-pill" onclick="answerMandi('agra')">Agra</div>
+      <div class="chat-pill" onclick="answerMandi('warangal')">Warangal</div>
+      <div class="chat-pill" onclick="answerMandi('kurnool')">Kurnool</div>
+      <div class="chat-pill" onclick="answerMandi('solapur')">Solapur</div>
+      <div class="chat-pill" onclick="answerMandi('indore')">Indore</div>
+      <div class="chat-pill" onclick="answerMandi('ludhiana')">Ludhiana</div>
+      <div class="chat-pill" onclick="answerMandi('patna')">Patna</div>
+    </div>
+    <div class="chat-back" onclick="showMainMenu()">← Back</div>
+  </div>
+
+</div>
+
+<style>
+.chat-btn-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: var(--offwhite);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chat-menu-btn {
+  padding: 0.65rem 1rem;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--green);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  transition: all 0.15s;
+  text-align: left;
+}
+.chat-menu-btn:hover { background: var(--green); color: #fff; border-color: var(--green); }
+
+.chat-sub-menu {
+  padding: 0.75rem 1rem;
+  background: var(--offwhite);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chat-sub-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.chat-sub-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.chat-back {
+  font-size: 0.75rem;
+  color: var(--muted);
+  cursor: pointer;
+  margin-top: 0.3rem;
+}
+.chat-back:hover { color: var(--green); }
+</style>
+
+<script>
+// ─── Chatbot Logic ───
+let chatOpen = false;
+
+// ── Hardcoded knowledge base ──
+const CROP_INFO = {
+  tomato: { base: 18, peak: 'October – January', volatility: 'High', tip: 'Tomato is very perishable — sell within 2–3 days of harvest. Peak demand in winter months due to salad & cooking use.' },
+  onion:  { base: 24, peak: 'November – February', volatility: 'High', tip: 'Onion has good storage life (2–3 months). If price is low now, hold in a cool dry place and sell in peak season.' },
+  potato: { base: 16, peak: 'January – March', volatility: 'Moderate', tip: 'Potato stores well for months in cold storage. Avoid selling immediately post-harvest when supply is high.' },
+  wheat:  { base: 28, peak: 'March – May', volatility: 'Low', tip: 'Wheat has government MSP support. Sell to FCI or registered mandis for guaranteed price during rabi harvest.' },
+  rice:   { base: 32, peak: 'September – November', volatility: 'Low', tip: 'Rice prices are relatively stable. Kharif harvest hits market in Oct–Nov — sell early before supply peaks.' },
+};
+
+const MANDI_INFO = {
+  raichur:  { state: 'Karnataka',      mandis: ['Raichur Main', 'Sindhanur', 'Manvi'],         tip: 'Raichur is a major cotton & paddy hub. High isolation — check prices in Mysuru before selling.' },
+  mysuru:   { state: 'Karnataka',      mandis: ['Mysuru APMC', 'Nanjangud', 'Hunsur'],         tip: 'Mysuru APMC has excellent connectivity and competitive buyers. Good choice for vegetables.' },
+  nashik:   { state: 'Maharashtra',    mandis: ['Nashik APMC', 'Lasalgaon', 'Yeola'],          tip: 'Lasalgaon (Nashik) is Asia\'s largest onion market — best destination for onion growers.' },
+  agra:     { state: 'Uttar Pradesh',  mandis: ['Agra Main', 'Firozabad', 'Mathura'],          tip: 'Agra mandis are active for potato & wheat. Check Mathura mandi for better potato prices.' },
+  warangal: { state: 'Telangana',      mandis: ['Warangal APMC', 'Hanamkonda', 'Narsampet'],  tip: 'Warangal is strong for paddy & cotton. Consider Hanamkonda for better vegetable prices.' },
+  kurnool:  { state: 'Andhra Pradesh', mandis: ['Kurnool APMC', 'Nandyal', 'Adoni'],          tip: 'Kurnool has moderate isolation. Adoni is a top cotton mandi. Check Nandyal for onion rates.' },
+  solapur:  { state: 'Maharashtra',    mandis: ['Solapur APMC', 'Barshi', 'Pandharpur'],      tip: 'Solapur APMC is well-connected. Good for wheat, jowar and vegetables. Barshi has active onion trading.' },
+  indore:   { state: 'Madhya Pradesh', mandis: ['Indore APMC', 'Dewas', 'Ujjain'],            tip: 'Indore is a major trading hub with low isolation. Competitive prices for soybean, wheat & garlic.' },
+  ludhiana: { state: 'Punjab',         mandis: ['Ludhiana Grain Market', 'Moga', 'Jalandhar'], tip: 'Ludhiana has the highest market connectivity. Excellent for wheat & paddy — MSP procurement is strong here.' },
+  patna:    { state: 'Bihar',          mandis: ['Patna APMC', 'Hajipur', 'Muzaffarpur'],      tip: 'Patna mandis are growing fast. Hajipur is top for banana. Check mandi commission rates before selling.' },
+};
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-fab').classList.toggle('open', chatOpen);
+  document.getElementById('chat-window').classList.toggle('open', chatOpen);
+}
+
+function appendMsg(html, role) {
+  const box = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = html;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function showMainMenu() {
+  document.getElementById('chatBtnMenu').style.display = 'flex';
+  document.getElementById('cropPicker').style.display = 'none';
+  document.getElementById('mandiPicker').style.display = 'none';
+}
+
+function showCropPicker() {
+  appendMsg('📈 Crop Price &amp; Best Selling Time', 'user');
+  document.getElementById('chatBtnMenu').style.display = 'none';
+  document.getElementById('mandiPicker').style.display = 'none';
+  document.getElementById('cropPicker').style.display = 'block';
+}
+
+function showMandiPicker() {
+  appendMsg('🗺️ Nearby Mandi Recommendation', 'user');
+  document.getElementById('chatBtnMenu').style.display = 'none';
+  document.getElementById('cropPicker').style.display = 'none';
+  document.getElementById('mandiPicker').style.display = 'block';
+}
+
+function answerCropPrice(crop) {
+  const info = CROP_INFO[crop];
+  const emoji = {tomato:'🍅',onion:'🧅',potato:'🥔',wheat:'🌾',rice:'🍚'}[crop];
+  appendMsg(`${emoji} ${crop.charAt(0).toUpperCase()+crop.slice(1)}`, 'user');
+  const reply = `${emoji} <b>${crop.charAt(0).toUpperCase()+crop.slice(1)} — Price &amp; Best Time to Sell</b><br><br>` +
+    `💰 <b>Base Price:</b> ~₹${info.base}/kg<br>` +
+    `📅 <b>Peak Season:</b> ${info.peak}<br>` +
+    `📊 <b>Price Volatility:</b> ${info.volatility}<br><br>` +
+    `💡 <b>Tip:</b> ${info.tip}`;
+  appendMsg(reply, 'bot');
+  showMainMenu();
+}
+
+function answerMandi(district) {
+  const info = MANDI_INFO[district];
+  const name = district.charAt(0).toUpperCase() + district.slice(1);
+  appendMsg(`📍 ${name}`, 'user');
+  const mandiList = info.mandis.map(m => `• ${m}`).join('<br>');
+  const reply = `🗺️ <b>Nearby Mandis — ${name}, ${info.state}</b><br><br>` +
+    `<b>Top Mandis:</b><br>${mandiList}<br><br>` +
+    `💡 <b>Tip:</b> ${info.tip}`;
+  appendMsg(reply, 'bot');
+  showMainMenu();
+}
+
+function answerModelInfo() {
+  appendMsg('🤖 How Does Our ML Model Work?', 'user');
+  const reply = `🤖 <b>KrishiAlert ML Model — How It Works</b><br><br>` +
+    `<b>📦 Ensemble of 2 Models:</b><br>` +
+    `• <b>XGBoost (65%)</b> — learns complex price patterns from historical data<br>` +
+    `• <b>Gradient Boosting (35%)</b> — adds stability to predictions<br><br>` +
+    `<b>🔍 Features Used:</b><br>` +
+    `• Past prices (lag 1, 3, 7 days)<br>` +
+    `• Season & month, arrival volume<br>` +
+    `• Live weather (temp, rainfall via Open-Meteo)<br>` +
+    `• District isolation level<br><br>` +
+    `<b>🛡️ Cartel Detection:</b> IsolationForest flags if price is &gt;15% below fair value in isolated districts.<br><br>` +
+    `<b>🧠 Explainability:</b> SHAP values show <i>why</i> the model made each prediction.`;
+  appendMsg(reply, 'bot');
+  showMainMenu();
+}
+
+
+</script>
+</body>
+</html>
